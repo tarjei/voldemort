@@ -40,9 +40,23 @@ do
 done
 
 CLASSPATH=$CLASSPATH:$base_dir/dist/resources
-
-if [ -z $VOLD_OPTS ]; then
-  VOLD_OPTS="-Xmx2G -server -Dcom.sun.management.jmxremote"
+set -x
+# import   config settings from config directory
+if [ -f "$1/config/server-env.sh" ]; then 
+    . $1/config/server-env.sh
 fi
 
-java -Dlog4j.configuration=src/java/log4j.properties $VOLD_OPTS -cp $CLASSPATH voldemort.server.VoldemortServer $@
+
+if [ -z "$VOLD_OPTS" ]; then
+  VOLD_OPTS="-Xmx2G -server -Dcom.sun.management.jmxremote"
+fi
+# set the log4j.config. Use -Dlog4j.debug=true if you got problems
+if [ -z $LOG_CONFIG ] ; then
+    LOG_CONFIG=$(readlink -f "file://$1/src/java/log4j.properties" )
+    if [ ! -f $LOG_CONFIG ]; then
+        echo "No logfile found. starting without it."
+        LOG_CONFIG=""
+    fi
+fi
+
+java  $VOLD_OPTS -cp $CLASSPATH  -Dlog4j.configuration=$LOG_CONFIG voldemort.server.VoldemortServer $@
