@@ -22,7 +22,7 @@ then
 	exit 1
 fi
 
-base_dir=$(dirname $0)/..
+base_dir=$(readlink -f $(dirname $0)/..)
 
 for file in $base_dir/dist/*.jar;
 do
@@ -51,11 +51,15 @@ if [ -z "$VOLD_OPTS" ]; then
   VOLD_OPTS="-Xmx2G -server -Dcom.sun.management.jmxremote"
 fi
 # set the log4j.config. Use -Dlog4j.debug=true if you got problems
-if [ -z $LOG_CONFIG ] ; then
-    LOG_CONFIG=$(readlink -f "file://$1/src/java/log4j.properties" )
-    if [ ! -f $LOG_CONFIG ]; then
+if [ -z $LOG_CONFIG  ] ; then
+    LOG_CONFIG=$(readlink -f "$base_dir/src/java/log4j.properties" )
+    if [  -f $LOG_CONFIG ]; then
+        # log4j requires an url 
+        LOG_CONFIG="file://$LOG_CONFIG"
+    else
         echo "No logfile found. starting without it."
         LOG_CONFIG=""
+    
     fi
 fi
 
