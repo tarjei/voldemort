@@ -22,7 +22,20 @@ then
 	exit 1
 fi
 
-base_dir=$(readlink -f $(dirname $0)/..)
+base_dir=$(dirname $0)
+base_dir="$base_dir/.."
+pushd $base_dir
+base_dir=`pwd`
+popd
+echo "Basedir: $base_dir"
+
+if [ $# -eq 1 ];
+then
+    echo "Using $1 as VOLDEMORT_HOME"
+    VOLDEMORT_HOME=$1
+else
+    VOLDEMORT_HOME=$base_dir
+fi
 
 for file in $base_dir/dist/*.jar;
 do
@@ -42,8 +55,8 @@ done
 CLASSPATH=$CLASSPATH:$base_dir/dist/resources
 set -x
 # import   config settings from config directory
-if [ -f "$1/config/server-env.sh" ]; then 
-    . $1/config/server-env.sh
+if [ -f "$base_dir/config/server-env.sh" ]; then 
+    . $base_dir/config/server-env.sh
 fi
 
 
@@ -52,7 +65,8 @@ if [ -z "$VOLD_OPTS" ]; then
 fi
 # set the log4j.config. Use -Dlog4j.debug=true if you got problems
 if [ -z $LOG_CONFIG  ] ; then
-    LOG_CONFIG=$(readlink -f "$base_dir/src/java/log4j.properties" )
+# more portable than readlink
+    LOG_CONFIG="$VOLDEMORT_HOME/src/java/log4j.properties"
     if [  -f $LOG_CONFIG ]; then
         # log4j requires an url 
         LOG_CONFIG="file://$LOG_CONFIG"
@@ -63,4 +77,4 @@ if [ -z $LOG_CONFIG  ] ; then
     fi
 fi
 
-java  $VOLD_OPTS -cp $CLASSPATH  -Dlog4j.configuration=$LOG_CONFIG voldemort.server.VoldemortServer $@
+java  $VOLD_OPTS -cp $CLASSPATH  -Dlog4j.configuration=$LOG_CONFIG voldemort.server.VoldemortServer $VOLDEMORT_HOME
